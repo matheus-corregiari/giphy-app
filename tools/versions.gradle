@@ -40,14 +40,8 @@ ext.versions = [
                         uiautomator: '2.2.0'
                 ],
                 truth    : '1.0',
-                jetbrains: [
-                        test      : '',
-                        test_junit: '',
-                        coroutines: ''
-                ],
                 jraska   : '1.2.0',
                 mockk    : '1.9.2',
-                mirror   : '1.6.1',
-                junit    : '4.+'
+                mirror   : '1.6.1'
         ]
 ]
