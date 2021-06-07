@@ -1,0 +1,54 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+}
+
+android {
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    api project(":core:data")
+    api "com.github.bumptech.glide:glide:${versions.glide}"
+
+    api "com.google.android.material:material:${versions.material}"
+    api "com.google.truth:truth:${versions.test.truth}"
+
+    api "br.com.arch.toolkit:delegate:${versions.arch_toolkit}"
+
+    api "org.jetbrains.kotlin:kotlin-test:${versions.kotlin}"
+    api "org.jetbrains.kotlin:kotlin-test-junit:${versions.kotlin}"
+    api "org.jetbrains.kotlinx:kotlinx-coroutines-test:${versions.coroutines}"
+
+    api "io.mockk:mockk:${versions.test.mockk}"
+    api "io.mockk:mockk-android:${versions.test.mockk}"
+
+    api "com.squareup.okhttp3:mockwebserver:${versions.okhttp}"
+    api "com.jraska.livedata:testing-ktx:${versions.test.jraska}"
+
+    api "androidx.core:core-ktx:${versions.androidx.core}"
+    api "androidx.appcompat:appcompat:${versions.androidx.appcompat}"
+    api "androidx.constraintlayout:constraintlayout:${versions.androidx.constraint}"
+    api "androidx.test.espresso:espresso-core:${versions.test.androidx.espresso}"
+    api "androidx.test.espresso:espresso-contrib:${versions.test.androidx.espresso}"
+    api "androidx.test.espresso:espresso-intents:${versions.test.androidx.espresso}"
+    api "androidx.test.espresso:espresso-accessibility:${versions.test.androidx.espresso}"
+    api "androidx.test.espresso:espresso-web:${versions.test.androidx.espresso}"
+    api "androidx.test.espresso.idling:idling-concurrent:${versions.test.androidx.espresso}"
+    api "androidx.test.espresso:espresso-idling-resource:${versions.test.androidx.espresso}"
+    api "androidx.test.uiautomator:uiautomator:${versions.test.androidx.uiautomator}"
+    api "androidx.arch.core:core-testing:${versions.test.androidx.arch}"
+    debugImplementation "androidx.fragment:fragment-testing:${versions.test.androidx.fragment}"
+    api "androidx.test:core:${versions.test.androidx.core}"
+    api "androidx.test:runner:${versions.test.androidx.core}"
+    api "androidx.test:rules:${versions.test.androidx.core}"
+    api "androidx.test.ext:truth:${versions.test.androidx.core}"
+    api "androidx.test.ext:junit:${versions.test.androidx.ext}"
+    api "net.vidageek:mirror:${versions.test.mirror}"
+}

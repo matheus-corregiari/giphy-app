@@ -1,0 +1,32 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+
+    defaultConfig {
+        applicationId "com.matheus_corregiari.giphyapp"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation project(":core:data")
+
+    implementation "androidx.constraintlayout:constraintlayout:${versions.androidx.constraint}"
+    implementation "com.google.android.material:material:${versions.material}"
+    implementation "br.com.arch.toolkit:delegate:${versions.arch_toolkit}"
+    implementation "com.github.bumptech.glide:glide:${versions.glide}"
+
+    debugImplementation "androidx.fragment:fragment-testing:${versions.test.androidx.fragment}"
+    androidTestImplementation project(":core:test")
+    testImplementation project(":core:test")
+}

@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id "kotlin-kapt"
+}
+
+android {
+    defaultConfig {
+        buildConfigField 'String', 'BASE_URL', '\"https://api.giphy.com/v1/gifs/\"'
+        buildConfigField 'String', 'API_KEY', '\"9vfBrHFw1l8e5UrRFh4l92UD61uJCpli\"'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}"
+
+    api "androidx.core:core-ktx:${versions.androidx.core}"
+    api "androidx.appcompat:appcompat:${versions.androidx.appcompat}"
+    api "androidx.paging:paging-runtime-ktx:${versions.androidx.paging}"
+
+    implementation "androidx.room:room-runtime:${versions.androidx.room}"
+    implementation "androidx.room:room-ktx:${versions.androidx.room}"
+
+    implementation "com.squareup.moshi:moshi:${versions.moshi}"
+    implementation "com.squareup.moshi:moshi-kotlin:${versions.moshi}"
+
+    implementation "com.squareup.okhttp3:okhttp:${versions.okhttp}"
+    implementation "com.squareup.okhttp3:logging-interceptor:${versions.okhttp}"
+    implementation "com.squareup.retrofit2:retrofit:${versions.retrofit}"
+    implementation "com.squareup.retrofit2:converter-moshi:${versions.retrofit}"
+
+    kapt "androidx.room:room-compiler:$versions.androidx.room"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:${versions.moshi}"
+}

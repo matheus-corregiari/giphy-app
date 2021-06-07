@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Giphy App</string>
+
+    <string name="giphy_list_page_name">Browse Gifs</string>
+    <string name="favorite_list_page_name">Favorites</string>
+
+    <string name="search_hint">Search amazing Gifs</string>
+
+    <string name="error_with_data">Error updating gifs</string>
+    <string name="error_with_favorite">Error to add to favorites</string>
+
+    <string name="error_try_again">Try again</string>
+
+</resources>

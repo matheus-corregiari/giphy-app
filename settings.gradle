@@ -1,0 +1,4 @@
+rootProject.name = "Giphy App"
+include ':app'
+include ':core:data'
+include ':core:test'

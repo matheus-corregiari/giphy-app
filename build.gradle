@@ -1,0 +1,99 @@
+buildscript {
+    apply from: "$rootDir/tools/versions.gradle"
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$versions.android_plugin"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$versions.kotlin"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+
+    afterEvaluate {
+
+        if (!project.hasProperty("android")) return
+
+        android {
+
+            compileSdkVersion versions.compile.target_sdk
+            buildToolsVersion versions.compile.build_tools
+
+            defaultConfig {
+                minSdkVersion versions.compile.min_sdk
+                targetSdkVersion versions.compile.target_sdk
+                versionCode 1     // FIXME: Change it to use git commit count
+                versionName "1.0" // FIXME: Change it to use git describe
+                resConfigs "en"
+            }
+
+            lintOptions {
+                checkReleaseBuilds true
+
+                abortOnError true
+                ignoreWarnings false
+                absolutePaths false
+                warningsAsErrors false
+
+                htmlOutput file("$rootDir/build/reports/lint/html/$name-lint.html")
+                xmlOutput file("$rootDir/build/reports/lint/xml/$name-lint.xml")
+            }
+
+            aaptOptions {
+                cruncherEnabled = false
+            }
+
+            testOptions {
+                unitTests.includeAndroidResources true
+                unitTests.returnDefaultValues = true
+                animationsDisabled true
+            }
+
+            sourceSets {
+                main.java.srcDirs += 'src/main/kotlin'
+                test.java.srcDirs += 'src/test/kotlin'
+                androidTest.java.srcDirs += 'src/androidTest/kotlin'
+                androidTest.resources.srcDirs += 'src/androidTest/res'
+            }
+
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+
+            packagingOptions {
+                exclude 'META-INF/atomicfu.kotlin_module'
+                exclude 'META-INF/DEPENDENCIES'
+                exclude 'META-INF/LICENSE'
+                exclude 'META-INF/LICENSE.txt'
+                exclude 'META-INF/license.txt'
+                exclude 'META-INF/NOTICE'
+                exclude 'META-INF/NOTICE.txt'
+                exclude 'META-INF/notice.txt'
+                exclude 'META-INF/ASL2.0'
+                exclude 'META-INF/AL2.0'
+                exclude 'META-INF/LGPL2.1'
+                exclude("META-INF/*.kotlin_module")
+                exclude("META-INF/licenses/ASM")
+                exclude("win32-x86/attach_hotspot_windows.dll")
+                exclude("win32-x86-64/attach_hotspot_windows.dll")
+            }
+
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

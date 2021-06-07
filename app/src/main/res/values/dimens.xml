@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spacing_small">4dp</dimen>
+    <dimen name="spacing_medium">8dp</dimen>
+    <dimen name="spacing_large">16dp</dimen>
+
+    <dimen name="giphy_item_favorite_elevation">4dp</dimen>
+    <dimen name="giphy_item_image_height">135dp</dimen>
+    <dimen name="giphy_item_favorite_icon_size">36dp</dimen>
+    <dimen name="giphy_item_border_radius">8dp</dimen>
+    <dimen name="giphy_item_stroke_width">2dp</dimen>
+</resources>

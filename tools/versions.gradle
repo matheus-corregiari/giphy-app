@@ -1,0 +1,53 @@
+ext.versions = [
+
+        compile       : [
+                min_sdk    : 26,
+                target_sdk : 30,
+                build_tools: '30.0.2'
+        ],
+
+        kotlin        : '1.5.10',
+        android_plugin: '4.2.0',
+
+        // Android
+        androidx      : [
+                core      : '1.5.0',
+                appcompat : '1.3.0',
+                constraint: '2.0.4',
+                paging    : '3.0.0',
+                room      : '2.3.0'
+        ],
+        material      : '1.3.0',
+
+        // Utils
+        arch_toolkit  : '0.8.1',
+        coroutines    : '1.5.0',
+        glide         : '4.12.0',
+
+        // Json parser and http
+        moshi         : '1.12.0',
+        okhttp        : '4.9.1',
+        retrofit      : '2.9.0',
+
+        test          : [
+
+                androidx : [
+                        espresso   : '3.3.0',
+                        fragment   : '1.3.3',
+                        core       : '1.2.0',
+                        arch       : '2.1.0',
+                        ext        : '1.1.2',
+                        uiautomator: '2.2.0'
+                ],
+                truth    : '1.0',
+                jetbrains: [
+                        test      : '',
+                        test_junit: '',
+                        coroutines: ''
+                ],
+                jraska   : '1.2.0',
+                mockk    : '1.9.2',
+                mirror   : '1.6.1',
+                junit    : '4.+'
+        ]
+]
