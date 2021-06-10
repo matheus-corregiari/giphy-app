@@ -4,12 +4,20 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
-import com.matheus_corregiari.giphy.data.local.DatabaseProvider
+import com.facebook.stetho.Stetho
+import com.facebook.stetho.okhttp3.StethoInterceptor
+import com.matheus_corregiari.giphy.data.remote.ApiProvider
+import okhttp3.logging.HttpLoggingInterceptor
 
-class DataInitialization : ContentProvider() {
+class DebugDataInitialization : ContentProvider() {
 
     override fun onCreate(): Boolean {
-        context?.let { DatabaseProvider.setupDatabase(it) }
+        context?.let {
+            val debugInterceptor = HttpLoggingInterceptor()
+            debugInterceptor.level = HttpLoggingInterceptor.Level.BODY
+            ApiProvider.setupApi(StethoInterceptor(), debugInterceptor)
+            Stetho.initializeWithDefaults(it);
+        }
         return true
     }
 

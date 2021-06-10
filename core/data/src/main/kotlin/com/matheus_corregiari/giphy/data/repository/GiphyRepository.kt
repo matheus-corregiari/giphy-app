@@ -4,10 +4,10 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.matheus_corregiari.giphy.data.local.database
+import com.matheus_corregiari.giphy.data.local.DatabaseProvider
 import com.matheus_corregiari.giphy.data.local.entity.Favorite
 import com.matheus_corregiari.giphy.data.model.GiphyItemDTO
-import com.matheus_corregiari.giphy.data.remote.api
+import com.matheus_corregiari.giphy.data.remote.ApiProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -43,13 +43,13 @@ class GiphyRepository internal constructor() {
         GlobalScope.launch {
             withContext(Dispatchers.IO) {
                 giphy.favorite = giphy.favorite.not()
-                val hasOnList = database.favorite().get(giphy.id) != null
+                val hasOnList = DatabaseProvider.favoriteDao.get(giphy.id) != null
 
                 if (giphy.favorite.not() && hasOnList) {
-                    database.favorite().delete(giphy.asFavorite())
+                    DatabaseProvider.favoriteDao.delete(giphy.asFavorite())
                 }
                 if (giphy.favorite && hasOnList.not()) {
-                    database.favorite().insert(giphy.asFavorite())
+                    DatabaseProvider.favoriteDao.insert(giphy.asFavorite())
                 }
             }
         }
@@ -64,7 +64,7 @@ private class SearchPagingSource(
         return kotlin.runCatching {
             if (onlyFavored) {
                 return@runCatching LoadResult.Page<Int, GiphyItemDTO>(
-                    data = database.favorite().getAll().map(Favorite::asGiphyItemDTO),
+                    data = DatabaseProvider.favoriteDao.getAll().map(Favorite::asGiphyItemDTO),
                     prevKey = null,
                     nextKey = null
                 )
@@ -72,13 +72,13 @@ private class SearchPagingSource(
 
             val nextPageNumber = params.key ?: 1
             val response = if (query.isNullOrBlank().not()) {
-                api.searchGifs(params.loadSize, nextPageNumber, query ?: "")
+                ApiProvider.api.searchGifs(params.loadSize, nextPageNumber, query ?: "")
             } else {
-                api.fetchTrendingGifs(params.loadSize, nextPageNumber)
+                ApiProvider.api.fetchTrendingGifs(params.loadSize, nextPageNumber)
             }.gifList
 
             response.onEach { item ->
-                item.favorite = database.favorite().get(item.id) != null
+                item.favorite = DatabaseProvider.favoriteDao.get(item.id) != null
             }
             LoadResult.Page(
                 data = response,

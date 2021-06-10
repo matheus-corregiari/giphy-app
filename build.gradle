@@ -57,11 +57,9 @@ allprojects {
                 animationsDisabled true
             }
 
-            sourceSets {
-                main.java.srcDirs += 'src/main/kotlin'
-                test.java.srcDirs += 'src/test/kotlin'
-                androidTest.java.srcDirs += 'src/androidTest/kotlin'
-                androidTest.resources.srcDirs += 'src/androidTest/res'
+            sourceSets.forEach { sourceSet ->
+                sourceSet.java.srcDirs += "src/${sourceSet.name}/kotlin"
+                sourceSet.assets.srcDirs += "src/${sourceSet.name}/assets"
             }
 
             compileOptions {
