@@ -22,11 +22,15 @@ dependencies {
     implementation project(":core:data")
 
     implementation "androidx.constraintlayout:constraintlayout:${versions.androidx.constraint}"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "com.google.android.material:material:${versions.material}"
     implementation "br.com.arch.toolkit:delegate:${versions.arch_toolkit}"
+    implementation "br.com.arch.toolkit:recycler-adapter:${versions.arch_toolkit}"
+    implementation "br.com.arch.toolkit:statemachine:${versions.arch_toolkit}"
     implementation "com.github.bumptech.glide:glide:${versions.glide}"
 
     debugImplementation "androidx.fragment:fragment-testing:${versions.test.androidx.fragment}"
+
     androidTestImplementation project(":core:test")
     testImplementation project(":core:test")
 }

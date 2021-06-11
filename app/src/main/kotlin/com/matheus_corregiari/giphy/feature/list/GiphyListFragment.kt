@@ -10,13 +10,13 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.RecyclerView
 import br.com.arch.toolkit.delegate.extraProvider
 import br.com.arch.toolkit.delegate.viewProvider
+import br.com.arch.toolkit.recycler.adapter.SimpleAdapter
 import com.matheus_corregiari.giphy.R
 import com.matheus_corregiari.giphy.delegate.viewModelProvider
 import com.matheus_corregiari.giphy.feature.GiphyBrowseViewModel
-import com.matheus_corregiari.giphy.feature.list.adapter.GiphyLoadRecyclerAdapter
-import com.matheus_corregiari.giphy.feature.list.adapter.GiphyRecyclerAdapter
 import com.matheus_corregiari.giphy.feature.list.decoration.GiphyListItemDecoration
 import com.matheus_corregiari.giphy.feature.model.GiphyItemDO
+import com.matheus_corregiari.giphy.feature.view.GiphyItemView
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -32,8 +32,13 @@ class GiphyListFragment : Fragment(R.layout.fragment_giphy_list) {
 
     private val viewModel by viewModelProvider(GiphyListViewModel::class)
     private val searchViewModel by viewModelProvider(GiphyBrowseViewModel::class, fromParent = true)
-    private val adapter = GiphyRecyclerAdapter()
-        .withOnFavoriteListener(::onGiphyFavoriteClick)
+
+    // PAGING
+//    private val adapter = GiphyRecyclerAdapter()
+//        .withOnFavoriteListener(::onGiphyFavoriteClick)
+    // Simple
+    private val adapter = SimpleAdapter(::GiphyItemView)
+        .withListener(::onGiphyFavoriteClick)
 
     //region Extras
     private val displayOnlyFavored: Boolean by extraProvider(
@@ -51,19 +56,34 @@ class GiphyListFragment : Fragment(R.layout.fragment_giphy_list) {
 
         recyclerView.addItemDecoration(GiphyListItemDecoration())
         (recyclerView.itemAnimator as DefaultItemAnimator).supportsChangeAnimations = false
-        recyclerView.adapter = adapter.withLoadStateHeaderAndFooter(
-            header = GiphyLoadRecyclerAdapter(adapter),
-            footer = GiphyLoadRecyclerAdapter(adapter)
-        )
+        recyclerView.adapter = adapter
+//        .withLoadStateHeaderAndFooter(
+//            header = GiphyLoadRecyclerAdapter(adapter),
+//            footer = GiphyLoadRecyclerAdapter(adapter)
+//        )
         searchViewModel.searchLiveData.observe(viewLifecycleOwner, ::onNewSearchTermReceive)
+
+
+        if (displayOnlyFavored.not()) {
+            viewModel.testeLive().observe(viewLifecycleOwner) {
+                data(observer = adapter::setList)
+                loading {  }
+            }
+
+//            viewLifecycleOwner.lifecycleScope.launch {
+//                viewModel.testeFlow().collectLatest {
+//                    Log.wtf("TEST FLOW", it.toString())
+//                }
+//            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        searchViewModel.lastTypedTerm
-            .takeIf { it.isNullOrBlank().not() && displayOnlyFavored.not() }
-            ?.run(::onNewSearchTermReceive)
-            ?: fetchTrending()
+//        searchViewModel.lastTypedTerm
+//            .takeIf { it.isNullOrBlank().not() && displayOnlyFavored.not() }
+//            ?.run(::onNewSearchTermReceive)
+//            ?: fetchTrending()
     }
 
     override fun onDestroyView() {
@@ -80,10 +100,12 @@ class GiphyListFragment : Fragment(R.layout.fragment_giphy_list) {
 
     private fun onGiphyFavoriteClick(itemDO: GiphyItemDO) {
         viewModel.favorite(itemDO)
-        adapter.refresh()
+//        adapter.refresh()
     }
 
     private fun observeFLow(flow: Flow<PagingData<GiphyItemDO>>) {
-        viewLifecycleOwner.lifecycleScope.launch { flow.collectLatest(adapter::submitData) }
+        viewLifecycleOwner.lifecycleScope.launch {
+//            flow.collectLatest(adapter::submitData)
+        }
     }
 }

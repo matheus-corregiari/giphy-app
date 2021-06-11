@@ -1,4 +1,4 @@
-package com.matheus_corregiari.giphy.data.local.entity
+package com.matheus_corregiari.giphy.data.local.storage.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

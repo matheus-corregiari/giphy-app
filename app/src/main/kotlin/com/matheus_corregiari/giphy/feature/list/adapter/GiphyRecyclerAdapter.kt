@@ -38,7 +38,7 @@ class GiphyLoadRecyclerAdapter(private val adapter: GiphyRecyclerAdapter) :
         GiphyFooterViewHolder(parent, adapter::retry)
 }
 
-private class GiphyRecyclerItemDiffer : DiffUtil.ItemCallback<GiphyItemDO>() {
+class GiphyRecyclerItemDiffer : DiffUtil.ItemCallback<GiphyItemDO>() {
 
     override fun areItemsTheSame(oldItem: GiphyItemDO, newItem: GiphyItemDO) =
         oldItem.id == newItem.id

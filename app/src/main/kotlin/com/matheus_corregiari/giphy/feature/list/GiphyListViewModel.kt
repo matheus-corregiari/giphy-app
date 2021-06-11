@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import androidx.paging.map
+import br.com.arch.toolkit.livedata.extention.mapList
 import com.matheus_corregiari.giphy.data.RepositoryProvider
 import com.matheus_corregiari.giphy.feature.model.GiphyItemDO
 import kotlinx.coroutines.flow.map
@@ -11,6 +12,9 @@ import kotlinx.coroutines.flow.map
 class GiphyListViewModel : ViewModel() {
 
     private val repository = RepositoryProvider.giphyRepository
+
+    fun testeLive() = repository.testeLiveData().mapList(::GiphyItemDO)
+    fun testeFlow() = repository.testeFlow()
 
     fun fetchList(onlyFavored: Boolean) = repository.trendingGiphys(onlyFavored).flow
         .cachedIn(viewModelScope)

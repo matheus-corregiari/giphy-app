@@ -1,10 +1,11 @@
-package com.matheus_corregiari.giphy.data.local
+package com.matheus_corregiari.giphy.data.local.storage
 
 import android.content.Context
 import androidx.room.Room
-import com.matheus_corregiari.giphy.data.local.dao.FavoriteDao
-import com.matheus_corregiari.giphy.data.local.dao.GiphyDao
-import com.matheus_corregiari.giphy.data.local.dao.VersionDataDao
+import com.matheus_corregiari.giphy.data.local.storage.dao.FavoriteDao
+import com.matheus_corregiari.giphy.data.local.storage.dao.GiphyDao
+import com.matheus_corregiari.giphy.data.local.storage.dao.VersionDataDao
+import com.matheus_corregiari.giphy.data.local.setupOpenHelperFactory
 
 internal object DatabaseProvider {
     private lateinit var database: AppDatabase

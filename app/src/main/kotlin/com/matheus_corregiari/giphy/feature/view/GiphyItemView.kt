@@ -6,12 +6,13 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import br.com.arch.toolkit.delegate.viewProvider
+import br.com.arch.toolkit.recycler.adapter.ViewBinder
 import com.matheus_corregiari.giphy.R
 import com.matheus_corregiari.giphy.extension.animateFavorite
 import com.matheus_corregiari.giphy.extension.loadGifUrl
 import com.matheus_corregiari.giphy.feature.model.GiphyItemDO
 
-class GiphyItemView(context: Context) : ConstraintLayout(context) {
+class GiphyItemView(context: Context) : ConstraintLayout(context), ViewBinder<GiphyItemDO> {
 
     //region Views
     private val image: AppCompatImageView by viewProvider(R.id.gif_view)
@@ -25,7 +26,7 @@ class GiphyItemView(context: Context) : ConstraintLayout(context) {
         layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
     }
 
-    fun bind(model: GiphyItemDO) {
+    override fun bind(model: GiphyItemDO) {
         image.loadGifUrl(model.gifUrl)
         title.text = model.name
         title.isVisible = model.name.isNotBlank()

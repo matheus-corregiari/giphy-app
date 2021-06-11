@@ -4,12 +4,16 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.matheus_corregiari.giphy.data.local.DatabaseProvider
-import com.matheus_corregiari.giphy.data.local.entity.Favorite
+import br.com.arch.toolkit.livedata.response.DataResult
+import br.com.arch.toolkit.livedata.response.ResponseLiveData
+import com.matheus_corregiari.giphy.data.evil.data.GiphyDataProvider
+import com.matheus_corregiari.giphy.data.local.storage.DatabaseProvider
+import com.matheus_corregiari.giphy.data.local.storage.entity.Favorite
 import com.matheus_corregiari.giphy.data.model.GiphyItemDTO
 import com.matheus_corregiari.giphy.data.remote.ApiProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -20,6 +24,14 @@ class GiphyRepository internal constructor() {
         enablePlaceholders = true,
         initialLoadSize = 400
     )
+
+    fun testeLiveData(): ResponseLiveData<List<GiphyItemDTO>> {
+        return GiphyDataProvider().liveData
+    }
+
+    fun testeFlow(): Flow<DataResult<List<GiphyItemDTO>>> {
+        return GiphyDataProvider().flow
+    }
 
     fun trendingGiphys(onlyFavored: Boolean): Pager<Int, GiphyItemDTO> {
         return Pager(pagingConfig, initialKey = 1) {

@@ -4,7 +4,7 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
-import com.matheus_corregiari.giphy.data.local.DatabaseProvider
+import com.matheus_corregiari.giphy.data.local.storage.DatabaseProvider
 
 class DataInitialization : ContentProvider() {
 

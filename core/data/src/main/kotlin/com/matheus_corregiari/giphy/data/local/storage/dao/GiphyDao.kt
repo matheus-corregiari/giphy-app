@@ -1,11 +1,11 @@
-package com.matheus_corregiari.giphy.data.local.dao
+package com.matheus_corregiari.giphy.data.local.storage.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.matheus_corregiari.giphy.data.local.entity.Giphy
+import com.matheus_corregiari.giphy.data.local.storage.entity.Giphy
 
 @Dao
 internal interface GiphyDao {
@@ -16,7 +16,7 @@ internal interface GiphyDao {
     suspend fun get(id: String): Giphy?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(item: Giphy)
+    suspend fun insertAll(items: List<Giphy>)
 
     @Delete
     suspend fun delete(item: Giphy)

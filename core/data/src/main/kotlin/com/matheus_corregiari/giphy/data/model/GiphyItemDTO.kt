@@ -1,6 +1,7 @@
 package com.matheus_corregiari.giphy.data.model
 
-import com.matheus_corregiari.giphy.data.local.entity.Favorite
+import com.matheus_corregiari.giphy.data.local.storage.entity.Favorite
+import com.matheus_corregiari.giphy.data.local.storage.entity.Giphy
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -13,6 +14,7 @@ class GiphyItemDTO(
     var favorite: Boolean = false
 
     internal fun asFavorite() = Favorite(id, title, images.downsized.url)
+    internal fun asGiphy() = Giphy(id, title, images.downsized.url)
 }
 
 
