@@ -8,13 +8,14 @@ import kotlin.time.ExperimentalTime
 
 internal abstract class TimeBasedDataProvider<T> : DataRequestProvider<T>() {
 
-    abstract val tableName: String
+    private val indexTimeToSkip = 1
+    private val indexTimeToInvalidate = 2
 
     @ExperimentalTime
-    open val timeToSkip: Long = Duration.seconds(0).inWholeMilliseconds
+    open val timeToSkip: Long = Duration.seconds(30).inWholeMilliseconds
 
     @ExperimentalTime
-    open val timeToInvalidate: Long = Duration.hours(200000).inWholeMilliseconds
+    open val timeToInvalidate: Long = Duration.seconds(60).inWholeMilliseconds
 
     @ExperimentalTime
     override suspend fun remoteVersion(): VersionData? {
@@ -38,37 +39,35 @@ internal abstract class TimeBasedDataProvider<T> : DataRequestProvider<T>() {
         DatabaseProvider.versionDataDao.insert(version)
     }
 
-    override suspend fun dump(version: VersionData) {
+    override suspend fun dumpLocal(version: VersionData) {
         DatabaseProvider.versionDataDao.delete(version)
     }
 
-    override suspend fun isVersionsTheSame(
+    override suspend fun isLocalStillValid(
         localVersion: VersionData,
         remoteVersion: VersionData?
     ): Boolean {
-        if (localVersion.strategy != remoteVersion?.strategy) return false
-
-        val localVersionSplit = localVersion.version.split("|")
-        val localDataInTimeMillis = localVersionSplit.first().toLong()
-        val localDelayInTimeMillis = localVersionSplit[1].toLong()
-        val localDataExpire = localDataInTimeMillis + localDelayInTimeMillis
-        val remoteDataInTimeMillis =
-            remoteVersion.version.split("|").first().toLong()
-        return remoteDataInTimeMillis <= localDataExpire
+        return validateTime(localVersion, remoteVersion, indexTimeToSkip)
     }
 
-    override suspend fun isLocalDataDisplayable(
+    override suspend fun isLocalDisplayable(
         localVersion: VersionData,
         remoteVersion: VersionData?
     ): Boolean {
-        if (localVersion.strategy != remoteVersion?.strategy) return false
+        return validateTime(localVersion, remoteVersion, indexTimeToInvalidate)
+    }
 
+    private fun validateTime(
+        localVersion: VersionData,
+        remoteVersion: VersionData?,
+        intervalIndex: Int
+    ): Boolean {
         val localVersionSplit = localVersion.version.split("|")
         val localDataInTimeMillis = localVersionSplit.first().toLong()
-        val localDelayInTimeMillis = localVersionSplit.last().toLong()
+        val localDelayInTimeMillis = localVersionSplit[intervalIndex].toLong()
         val localDataExpire = localDataInTimeMillis + localDelayInTimeMillis
         val remoteDataInTimeMillis =
-            remoteVersion.version.split("|").first().toLong()
+            (remoteVersion?.version ?: "0").split("|").first().toLong()
         return remoteDataInTimeMillis <= localDataExpire
     }
 }

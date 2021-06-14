@@ -14,6 +14,6 @@ internal class Giphy(
     @ColumnInfo(name = "image_url") val imageUrl: String
 ) {
     fun asGiphyItemDTO() = GiphyItemDTO(id, title, GiphyImageDTO(GiphyImageUrlDTO(imageUrl))).also {
-        it.favorite = true
+        it.favorite = false
     }
 }

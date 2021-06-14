@@ -18,20 +18,23 @@ import kotlinx.coroutines.launch
 
 internal abstract class DataRequestProvider<T> {
 
-    abstract suspend fun remoteLoad(): T
+    abstract val tableName: String
+
+    abstract suspend fun loadRemote(): T
+    abstract suspend fun loadLocal(): T
+
     abstract suspend fun remoteVersion(): VersionData?
-
     abstract suspend fun localVersion(): VersionData?
-    abstract suspend fun localLoad(): T
-    abstract suspend fun saveLocal(version: VersionData, data: T)
-    abstract suspend fun dump(version: VersionData)
 
-    abstract suspend fun isVersionsTheSame(
+    abstract suspend fun saveLocal(version: VersionData, data: T)
+    abstract suspend fun dumpLocal(version: VersionData)
+
+    abstract suspend fun isLocalStillValid(
         localVersion: VersionData,
         remoteVersion: VersionData?
     ): Boolean
 
-    abstract suspend fun isLocalDataDisplayable(
+    abstract suspend fun isLocalDisplayable(
         localVersion: VersionData,
         remoteVersion: VersionData?
     ): Boolean
@@ -71,29 +74,33 @@ internal abstract class DataRequestProvider<T> {
             .getOrNull()
 
         if (localVersion != null) {
-            localData = kotlin.runCatching { localLoad() }.onSuccess { data ->
-                needCallRemote = isVersionsTheSame(localVersion, remoteVersion)
-                if (remoteVersionWithError || isLocalDataDisplayable(
+            if (localVersion.strategy != remoteVersion?.strategy) {
+                dumpLocal(localVersion)
+            } else {
+                localData = kotlin.runCatching { loadLocal() }.onSuccess { data ->
+                    needCallRemote = isLocalStillValid(localVersion, remoteVersion).not()
+                    val isLocalDisplayable = isLocalDisplayable(
                         localVersion,
                         remoteVersion
                     )
-                ) {
-                    if (needCallRemote) {
-                        Log.wtf("TEST FLOW", "POSTOU DADOS LOCAIS, MAS ESTÁ CHAMANDO API")
-                        emit(data.loadingResult(flowErrors))
+                    if (remoteVersionWithError || isLocalDisplayable) {
+                        if (needCallRemote) {
+                            Log.wtf("TEST FLOW", "LOCAL DATA, BUT SHOULD REQUEST API")
+                            emit(data.loadingResult(flowErrors))
+                        } else {
+                            Log.wtf("TEST FLOW", "DATA STILL VALID")
+                            emit(data.successResult(flowErrors))
+                            return
+                        }
                     } else {
-                        Log.wtf("TEST FLOW", "DADOS LOCAIS AINDA VÁLIDOS API")
-                        emit(data.successResult(flowErrors))
-                        return
+                        dumpLocal(localVersion)
                     }
-                } else {
-                    dump(localVersion)
-                }
-            }.onFailure(flowErrors::add).getOrNull()
+                }.onFailure(flowErrors::add).getOrNull()
+            }
         }
         if (needCallRemote) {
-            Log.wtf("TEST FLOW", "CHAMOU API")
-            kotlin.runCatching { remoteLoad() }.onSuccess { newData ->
+            Log.wtf("TEST FLOW", "REQUEST API")
+            kotlin.runCatching { loadRemote() }.onSuccess { newData ->
                 if (remoteVersion != null) {
                     kotlin.runCatching { saveLocal(remoteVersion, newData) }
                         .onFailure(flowErrors::add)

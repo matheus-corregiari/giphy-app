@@ -55,12 +55,9 @@ class GiphyRepository internal constructor() {
         GlobalScope.launch {
             withContext(Dispatchers.IO) {
                 giphy.favorite = giphy.favorite.not()
-                val hasOnList = DatabaseProvider.favoriteDao.get(giphy.id) != null
-
-                if (giphy.favorite.not() && hasOnList) {
+                if (giphy.favorite.not()) {
                     DatabaseProvider.favoriteDao.delete(giphy.asFavorite())
-                }
-                if (giphy.favorite && hasOnList.not()) {
+                } else {
                     DatabaseProvider.favoriteDao.insert(giphy.asFavorite())
                 }
             }
