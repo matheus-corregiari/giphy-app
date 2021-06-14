@@ -12,10 +12,10 @@ internal abstract class TimeBasedDataProvider<T> : DataRequestProvider<T>() {
     private val indexTimeToInvalidate = 2
 
     @ExperimentalTime
-    open val timeToSkip: Long = Duration.seconds(30).inWholeMilliseconds
+    open val timeToSkip: Long = Duration.minutes(1).inWholeMilliseconds
 
     @ExperimentalTime
-    open val timeToInvalidate: Long = Duration.seconds(60).inWholeMilliseconds
+    open val timeToInvalidate: Long = Duration.minutes(30).inWholeMilliseconds
 
     @ExperimentalTime
     override suspend fun remoteVersion(): VersionData? {

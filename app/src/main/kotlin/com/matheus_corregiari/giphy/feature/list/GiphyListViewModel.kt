@@ -14,7 +14,7 @@ class GiphyListViewModel : ViewModel() {
     private val repository = RepositoryProvider.giphyRepository
 
     fun testeLive() = repository.testeLiveData().mapList(::GiphyItemDO)
-    fun testeFlow() = repository.testeFlow()
+    fun testeFlow() = repository.testeFlow().map { it.map(::GiphyItemDO) }
 
     fun fetchList(onlyFavored: Boolean) = repository.trendingGiphys(onlyFavored).flow
         .cachedIn(viewModelScope)

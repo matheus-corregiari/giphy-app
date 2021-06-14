@@ -1,14 +1,21 @@
 package com.matheus_corregiari.giphy.feature.list.adapter
 
+import android.content.Context
 import android.view.ViewGroup
 import androidx.paging.LoadState
 import androidx.paging.LoadStateAdapter
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import br.com.arch.toolkit.recycler.adapter.BaseRecyclerAdapter
 import com.matheus_corregiari.giphy.feature.list.adapter.viewholder.GiphyFooterViewHolder
 import com.matheus_corregiari.giphy.feature.model.GiphyItemDO
 import com.matheus_corregiari.giphy.feature.view.GiphyItemView
+
+class SimpleGiphyRecyclerAdapter : BaseRecyclerAdapter<GiphyItemDO>(GiphyRecyclerItemDiffer()) {
+
+    override fun viewCreator(context: Context, viewType: Int) = GiphyItemView(context)
+}
 
 class GiphyRecyclerAdapter :
     PagingDataAdapter<GiphyItemDO, RecyclerView.ViewHolder>(GiphyRecyclerItemDiffer()) {

@@ -19,15 +19,15 @@ fun AppCompatImageView.loadGifUrl(url: String) {
         .into(this)
 }
 
-fun AppCompatImageView.animateFavorite(favorite: Boolean) {
+fun AppCompatImageView.animateFavorite(favorite: Boolean, onEnd: () -> Unit) {
     val oldIcon = if (favorite) R.drawable.ic_round_unfavorite else R.drawable.ic_round_favorite
     val icon = if (favorite) R.drawable.ic_round_favorite else R.drawable.ic_round_unfavorite
 
     setImageResource(oldIcon)
-    animateHide { setImageResource(icon) }
+    animateHide({ setImageResource(icon) }, onEnd)
 }
 
-private fun View.animateHide(endAction: () -> Unit) {
+private fun View.animateHide(endHideAction: () -> Unit, endAction: () -> Unit) {
     scaleX = 1f
     scaleY = 1f
     alpha = 1f
@@ -36,12 +36,12 @@ private fun View.animateHide(endAction: () -> Unit) {
         .setInterpolator(OvershootInterpolator())
         .scaleX(0f).scaleY(0f).alpha(0.5f)
         .withEndAction {
-            endAction.invoke()
-            animateShow()
+            endHideAction.invoke()
+            animateShow(endAction)
         }
 }
 
-private fun View.animateShow() {
+private fun View.animateShow(endAction: () -> Unit) {
     scaleX = 0f
     scaleY = 0f
     alpha = 0.5f
@@ -49,4 +49,5 @@ private fun View.animateShow() {
         .setDuration(400L)
         .setInterpolator(OvershootInterpolator())
         .scaleX(1f).scaleY(1f).alpha(1f)
+        .withEndAction(endAction)
 }

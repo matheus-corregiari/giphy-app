@@ -34,7 +34,7 @@ class GiphyItemView(context: Context) : ConstraintLayout(context), ViewBinder<Gi
         val oldModel = favoriteAction.tag as? GiphyItemDO
         val oldId = oldModel?.id
         if (oldId == model.id && oldModel.favorite != model.favorite) {
-            favoriteAction.animateFavorite(model.favorite)
+            favoriteAction.animateFavorite(model.favorite) {}
         } else {
             favoriteAction.setImageResource(
                 if (model.favorite) R.drawable.ic_round_favorite
@@ -48,8 +48,7 @@ class GiphyItemView(context: Context) : ConstraintLayout(context), ViewBinder<Gi
         favoriteAction.setOnClickListener {
             (favoriteAction.tag as? GiphyItemDO)?.let { model ->
                 model.favorite = model.favorite.not()
-                favoriteAction.animateFavorite(model.favorite)
-                listener?.onClick(it)
+                favoriteAction.animateFavorite(model.favorite) { listener?.onClick(it) }
             }
         }
     }

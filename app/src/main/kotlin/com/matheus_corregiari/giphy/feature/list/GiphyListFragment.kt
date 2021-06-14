@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.coroutineScope
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -14,7 +15,6 @@ import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import br.com.arch.toolkit.delegate.extraProvider
 import br.com.arch.toolkit.delegate.viewProvider
-import br.com.arch.toolkit.recycler.adapter.SimpleAdapter
 import br.com.arch.toolkit.statemachine.ViewStateMachine
 import br.com.arch.toolkit.statemachine.config
 import br.com.arch.toolkit.statemachine.setup
@@ -22,9 +22,10 @@ import br.com.arch.toolkit.statemachine.state
 import com.matheus_corregiari.giphy.R
 import com.matheus_corregiari.giphy.delegate.viewModelProvider
 import com.matheus_corregiari.giphy.feature.GiphyBrowseViewModel
+import com.matheus_corregiari.giphy.feature.list.adapter.SimpleGiphyRecyclerAdapter
 import com.matheus_corregiari.giphy.feature.list.decoration.GiphyListItemDecoration
 import com.matheus_corregiari.giphy.feature.model.GiphyItemDO
-import com.matheus_corregiari.giphy.feature.view.GiphyItemView
+import kotlinx.coroutines.flow.collect
 
 private const val EXTRA_SHOW_ONY_FAVORED = "SAVE_STATE_MACHINE_INSTANCE"
 
@@ -44,8 +45,7 @@ class GiphyListFragment : Fragment(R.layout.fragment_giphy_list) {
     private val searchViewModel by viewModelProvider(GiphyBrowseViewModel::class, fromParent = true)
     private val stateMachine = ViewStateMachine()
 
-    private val adapter = SimpleAdapter(::GiphyItemView)
-        .withListener(::onGiphyFavoriteClick)
+    private val adapter = SimpleGiphyRecyclerAdapter().withListener(::onGiphyFavoriteClick)
 
     //region Extras
     private val displayOnlyFavored: Boolean by extraProvider(
@@ -90,6 +90,10 @@ class GiphyListFragment : Fragment(R.layout.fragment_giphy_list) {
                 }
 
                 data(observer = ::onGiphyListReceive)
+            }
+        } else {
+            lifecycle.coroutineScope.launchWhenCreated {
+                viewModel.testeFlow().collect { onGiphyListReceive(it) }
             }
         }
         setupStateMachine()

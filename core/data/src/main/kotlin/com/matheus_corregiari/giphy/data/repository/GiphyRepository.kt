@@ -4,7 +4,6 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import br.com.arch.toolkit.livedata.response.DataResult
 import br.com.arch.toolkit.livedata.response.ResponseLiveData
 import com.matheus_corregiari.giphy.data.evil.data.GiphyDataProvider
 import com.matheus_corregiari.giphy.data.local.storage.DatabaseProvider
@@ -14,6 +13,7 @@ import com.matheus_corregiari.giphy.data.remote.ApiProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -29,8 +29,8 @@ class GiphyRepository internal constructor() {
         return GiphyDataProvider().liveData
     }
 
-    fun testeFlow(): Flow<DataResult<List<GiphyItemDTO>>> {
-        return GiphyDataProvider().flow
+    fun testeFlow(): Flow<List<GiphyItemDTO>> {
+        return DatabaseProvider.favoriteDao.getAllFlow().map { it.map(Favorite::asGiphyItemDTO) }
     }
 
     fun trendingGiphys(onlyFavored: Boolean): Pager<Int, GiphyItemDTO> {
