@@ -4,212 +4,168 @@ import android.util.Log
 import br.com.arch.toolkit.livedata.response.DataResult
 import br.com.arch.toolkit.livedata.response.DataResultStatus
 import br.com.arch.toolkit.livedata.response.ResponseLiveData
-import com.matheus_corregiari.giphy.data.evil.livedata.ResultMutableResponseLiveData
+import com.matheus_corregiari.giphy.data.evil.livedata.responseLiveData
+import com.matheus_corregiari.giphy.data.evil.version.VersionStrategy
 import com.matheus_corregiari.giphy.data.exception.MultipleErrorsException
-import com.matheus_corregiari.giphy.data.local.storage.entity.VersionData
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
 
-internal abstract class DataRequestProvider<T> {
+internal abstract class DataRequestProvider<T>(
+    private val strategy: Strategy,
+    private val recurrence: RecurrenceStrategy
+) {
 
-    abstract val tableName: String
+    abstract val versionStrategy: VersionStrategy
 
     abstract suspend fun loadRemote(): T
     abstract suspend fun loadLocal(): T
-    abstract suspend fun loadLocalFlow(): Flow<T>
 
-    abstract suspend fun remoteVersion(): VersionData?
-    abstract suspend fun localVersion(): VersionData?
+    abstract suspend fun saveLocal(data: T)
+    abstract suspend fun dumpLocal()
 
-    abstract suspend fun saveLocal(version: VersionData, data: T)
-    abstract suspend fun dumpLocal(version: VersionData)
-
-    abstract suspend fun isLocalStillValid(
-        localVersion: VersionData,
-        remoteVersion: VersionData?
-    ): Boolean
-
-    abstract suspend fun isLocalDisplayable(
-        localVersion: VersionData,
-        remoteVersion: VersionData?
-    ): Boolean
-
-    open val flow: Flow<DataResult<T>> = flow {
-        emit(null.loadingResult(null))
-        kotlin.runCatching { executeOperation() }
-            .onFailure { emit(errorResult(listOf(it), null)) }
+    open val dataFlow: Flow<DataResult<T>> = buildFlow(strategy).flowOn(Dispatchers.IO)
+    open val versionFlow: Flow<DataResult<Long>> = flow<DataResult<Long>> {
+        emit(loadingResult())
+        when (recurrence) {
+            RecurrenceStrategy.ONE_SHOT -> {
+                kotlin.runCatching { versionStrategy.local()?.updatedAt }
+                    .onSuccess { emit(successResult(it)) }
+                    .onFailure { emit(errorResult(errors = listOf(it))) }
+            }
+            RecurrenceStrategy.OBSERVABLE -> TODO()
+        }
     }.flowOn(Dispatchers.IO)
 
-    open val liveData: ResponseLiveData<T>
-        get() {
-            val liveData = ResultMutableResponseLiveData<T>()
-            GlobalScope.launch {
-                flow.collectLatest {
-                    liveData.postValue(it)
+    open val dataLiveData: ResponseLiveData<T>
+        get() = dataFlow.responseLiveData
+    open val versionLiveData: ResponseLiveData<Long>
+        get() = versionFlow.responseLiveData
+
+    private fun buildFlow(strategy: Strategy) = flow {
+        emit(loadingResult())
+        kotlin.runCatching {
+            when (strategy) {
+                Strategy.REQUEST -> when (recurrence) {
+                    RecurrenceStrategy.ONE_SHOT -> emitAll(remoteFlow())
+                    RecurrenceStrategy.OBSERVABLE -> {
+                        val errors =
+                            listOf(IllegalArgumentException("Request strategy cannot be observable"))
+                        emit(errorResult<T>(errors = errors))
+                    }
+                }
+
+                Strategy.LOCAL -> when (recurrence) {
+                    RecurrenceStrategy.ONE_SHOT -> emitAll(localFlow())
+                    RecurrenceStrategy.OBSERVABLE -> TODO()
+                }
+
+                Strategy.AUTO -> when (recurrence) {
+                    RecurrenceStrategy.ONE_SHOT -> emitAll(autoFlow())
+                    RecurrenceStrategy.OBSERVABLE -> TODO()
                 }
             }
-            return liveData
         }
+    }
 
-    private suspend fun FlowCollector<DataResult<T>>.executeOperation() {
-        val flowErrors = mutableListOf<Throwable>()
-
-        var needCallRemote = true
-        var remoteVersionWithError = false
-        var localData: T? = null
-        val localVersion =
-            kotlin.runCatching { localVersion() }.onFailure(flowErrors::add).getOrNull()
-        val remoteVersion = kotlin.runCatching { remoteVersion() }
-            .onSuccess { remoteVersionWithError = false }
-            .onFailure { remoteVersionWithError = true }
+    private fun remoteFlow(
+        localData: T? = null,
+        flowErrors: MutableList<Throwable> = mutableListOf()
+    ) = flow<DataResult<T>> {
+        Log.wtf("REQUEST PROVIDER", "START REMOTE FLOW")
+        kotlin.runCatching { loadRemote() }
             .onFailure(flowErrors::add)
-            .getOrNull()
-
-        if (localVersion != null) {
-            if (localVersion.strategy != remoteVersion?.strategy) {
-                dumpLocal(localVersion)
-            } else {
-                localData = kotlin.runCatching { loadLocal() }.onSuccess { data ->
-                    needCallRemote = isLocalStillValid(localVersion, remoteVersion).not()
-                    val isLocalDisplayable = isLocalDisplayable(
-                        localVersion,
-                        remoteVersion
-                    )
-                    if (remoteVersionWithError || isLocalDisplayable) {
-                        if (needCallRemote) {
-                            Log.wtf("TEST FLOW", "LOCAL DATA, BUT SHOULD REQUEST API")
-                            emit(data.loadingResult(flowErrors))
-                        } else {
-                            Log.wtf("TEST FLOW", "DATA STILL VALID")
-                            emit(data.successResult(flowErrors))
-                            return
-                        }
-                    } else {
-                        dumpLocal(localVersion)
-                    }
-                }.onFailure(flowErrors::add).getOrNull()
+            .onFailure { emit(errorResult(data = localData, errors = flowErrors)) }
+            .onSuccess { result ->
+                emit(successResult(data = result))
+                internalSaveLocal(result)
             }
-        }
-        if (needCallRemote) {
-            requestApi(remoteVersion, localData, flowErrors)
-        }
     }
 
-    private suspend fun FlowCollector<DataResult<T>>.requestApi(
-        remoteVersion: VersionData?,
-        localData: T?,
-        flowErrors: MutableList<Throwable>
-    ) {
-        Log.wtf("TEST FLOW", "REQUEST API")
-        kotlin.runCatching { loadRemote() }.onSuccess { newData ->
-            if (remoteVersion != null) {
-                kotlin.runCatching { saveLocal(remoteVersion, newData) }
-                    .onFailure(flowErrors::add)
-            }
-            emit(newData.successResult(flowErrors))
-        }.onFailure(flowErrors::add)
-            .onFailure { emit(errorResult(flowErrors, localData)) }
-    }
-
-    private fun errorResult(list: List<Throwable>, data: T?) = DataResult(
-        data = data, error = MultipleErrorsException(list), status = DataResultStatus.ERROR
-    )
-
-    private fun T?.successResult(list: List<Throwable>) = DataResult(
-        data = this, error = MultipleErrorsException(list), status = DataResultStatus.SUCCESS
-    )
-
-    private fun T?.loadingResult(list: List<Throwable>?) = DataResult(
-        data = this, error = list?.let(::MultipleErrorsException), status = DataResultStatus.LOADING
-    )
-
-
-    @FlowPreview
-    private suspend fun testReactive() {
-
-        // flow dados
-        // tooodo dado local (quando updatado)
-
-
-        val remoteFlow = flow<DataResult<T>> {
-            emit(null.loadingResult(null))
-            val remoteVersion: VersionData? = kotlin.runCatching { remoteVersion() }.getOrNull()
-            kotlin.runCatching {
-                loadRemote()
-            }.onSuccess {
-                remoteVersion?.let { version -> saveLocal(version, it) }
-                emit(it.successResult(emptyList()))
-            }.onFailure { emit(errorResult(emptyList(), null)) }
-        }
-        
-        val localFLow = loadLocalFlow()
-        localFLow.combine(remoteFlow) { localData, remoteData ->
-
-        }
-
+    private fun localFlow(flowErrors: MutableList<Throwable> = mutableListOf()) =
         flow<DataResult<T>> {
-            val flowErrors = mutableListOf<Throwable>()
-            var lastLocalData: AtomicReference<T>? = null
+            Log.wtf("REQUEST PROVIDER", "START LOCAL FLOW")
             kotlin.runCatching {
-                emit(null.loadingResult(flowErrors))
-                loadLocalFlow()
-                    .flatMapConcat { localData ->
-                        flowErrors.clear()
+                val localVersion = versionStrategy.local()
+                    ?: throw IllegalStateException("Cannot retrieve local version")
+                val removeVersion = versionStrategy.remote()
+                if (versionStrategy.isLocalDisplayable(localVersion, removeVersion)) {
+                    emit(successResult(data = loadLocal()))
+                    versionStrategy.saveVersion(localVersion)
+                } else {
+                    internalRemoveLocal()
+                }
+            }.onFailure(flowErrors::add).onFailure { emit(errorResult(errors = flowErrors)) }
+        }
 
-                        var needCallRemote = true
-                        var remoteVersionWithError = false
-                        val localVersion =
-                            kotlin.runCatching { localVersion() }.onFailure(flowErrors::add)
-                                .getOrNull()
-                        val remoteVersion = kotlin.runCatching { remoteVersion() }
-                            .onSuccess { remoteVersionWithError = false }
-                            .onFailure { remoteVersionWithError = true }
-                            .onFailure(flowErrors::add)
-                            .getOrNull()
-
-                        if (localData is List<*> && localData.isNotEmpty()) {
-                            requestApi(remoteVersion, localData, flowErrors)
-                            return@flatMapConcat flow<DataResult<T>> {}
-                        }
-
-                        if (localVersion != null) {
-                            if (localVersion.strategy != remoteVersion?.strategy) {
-                                dumpLocal(localVersion)
+    private fun autoFlow() = flow<DataResult<T>> {
+        val flowErrors = mutableListOf<Throwable>()
+        kotlin.runCatching {
+            Log.wtf("REQUEST PROVIDER", "START AUTO FLOW")
+            versionStrategy.local()?.let { localVersion ->
+                val removeVersion = versionStrategy.remote()
+                if (versionStrategy.isLocalDisplayable(localVersion, removeVersion)) {
+                    kotlin.runCatching { loadLocal() }
+                        .onSuccess { data ->
+                            val isVersionValid =
+                                versionStrategy.isLocalStillValid(localVersion, removeVersion)
+                            if (isVersionValid) {
+                                emit(successResult(data, flowErrors))
+                                versionStrategy.saveVersion(localVersion)
                             } else {
-                                needCallRemote =
-                                    isLocalStillValid(localVersion, remoteVersion).not()
-                                val isLocalDisplayable = isLocalDisplayable(
-                                    localVersion,
-                                    remoteVersion
-                                )
-                                if (remoteVersionWithError || isLocalDisplayable) {
-                                    if (needCallRemote) {
-                                        Log.wtf("TEST FLOW", "LOCAL DATA, BUT SHOULD REQUEST API")
-                                        emit(localData.loadingResult(flowErrors))
-                                    } else {
-                                        Log.wtf("TEST FLOW", "DATA STILL VALID")
-                                        emit(localData.successResult(flowErrors))
-                                        return@flatMapConcat flow<DataResult<T>> {}
-                                    }
-                                } else {
-                                    dumpLocal(localVersion)
-                                }
+                                emit(loadingResult(data, flowErrors))
+                                emitAll(remoteFlow(data, flowErrors))
                             }
                         }
-                        flow<DataResult<T>> {}
-                    }
-            }.onFailure(flowErrors::add)
-                .onFailure { emit(errorResult(flowErrors, lastLocalData?.get())) }
+                        .onFailure(flowErrors::add)
+                        .onFailure { emitAll(remoteFlow(flowErrors = flowErrors)) }
+                } else {
+                    internalRemoveLocal()
+                    emitAll(remoteFlow(flowErrors = flowErrors))
+                }
+            } ?: emitAll(remoteFlow(flowErrors = flowErrors))
+        }.onFailure(flowErrors::add).onFailure { emit(errorResult(errors = flowErrors)) }
+    }
+
+    private suspend fun internalSaveLocal(data: T) {
+        val remoteVersion = versionStrategy.remote() ?: return
+        kotlin.runCatching {
+            versionStrategy.saveVersion(remoteVersion)
+            saveLocal(data)
+        }.onFailure { versionStrategy.removeVersion(remoteVersion) }
+    }
+
+    private suspend fun internalRemoveLocal() {
+        val localVersion = versionStrategy.local() ?: return
+        kotlin.runCatching {
+            versionStrategy.removeVersion(localVersion)
+            dumpLocal()
         }
+    }
+
+    private fun <R> errorResult(data: R? = null, errors: List<Throwable>? = null) = DataResult(
+        data = data, error = errors?.let(::MultipleErrorsException), status = DataResultStatus.ERROR
+    )
+
+    private fun <R> successResult(data: R? = null, errors: List<Throwable>? = null) = DataResult(
+        data = data,
+        error = errors?.let(::MultipleErrorsException),
+        status = DataResultStatus.SUCCESS
+    )
+
+    private fun <R> loadingResult(data: R? = null, errors: List<Throwable>? = null) = DataResult(
+        data = data,
+        error = errors?.let(::MultipleErrorsException),
+        status = DataResultStatus.LOADING
+    )
+
+    enum class Strategy {
+        REQUEST, LOCAL, AUTO
+    }
+
+    enum class RecurrenceStrategy {
+        ONE_SHOT, OBSERVABLE
     }
 }

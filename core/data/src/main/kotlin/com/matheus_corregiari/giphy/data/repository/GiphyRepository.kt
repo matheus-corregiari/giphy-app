@@ -26,7 +26,7 @@ class GiphyRepository internal constructor() {
     )
 
     fun testeLiveData(): ResponseLiveData<List<GiphyItemDTO>> {
-        return GiphyDataProvider().liveData
+        return GiphyDataProvider().dataLiveData
     }
 
     fun testeFlow(): Flow<List<GiphyItemDTO>> {

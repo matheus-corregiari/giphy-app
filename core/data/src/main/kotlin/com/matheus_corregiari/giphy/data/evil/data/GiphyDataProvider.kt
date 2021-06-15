@@ -1,22 +1,25 @@
 package com.matheus_corregiari.giphy.data.evil.data
 
 import br.com.arch.toolkit.livedata.response.DataResult
-import com.matheus_corregiari.giphy.data.evil.TimeBasedDataProvider
+import com.matheus_corregiari.giphy.data.evil.DataRequestProvider
+import com.matheus_corregiari.giphy.data.evil.version.TimeBasedVersionStrategy
+import com.matheus_corregiari.giphy.data.evil.version.VersionStrategy
 import com.matheus_corregiari.giphy.data.local.storage.DatabaseProvider
 import com.matheus_corregiari.giphy.data.local.storage.entity.Giphy
-import com.matheus_corregiari.giphy.data.local.storage.entity.VersionData
 import com.matheus_corregiari.giphy.data.model.GiphyItemDTO
 import com.matheus_corregiari.giphy.data.remote.ApiProvider
+import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
-internal class GiphyDataProvider : TimeBasedDataProvider<List<GiphyItemDTO>>() {
+internal class GiphyDataProvider :
+    DataRequestProvider<List<GiphyItemDTO>>(Strategy.AUTO, RecurrenceStrategy.ONE_SHOT) {
 
-    override val tableName: String = "giphy"
+    @ExperimentalTime
+    override val versionStrategy: VersionStrategy = TimeBasedVersionStrategy(tableName = "giphy")
 
-    override val flow: Flow<DataResult<List<GiphyItemDTO>>>
-        get() = super.flow.combine(
+    override val dataFlow: Flow<DataResult<List<GiphyItemDTO>>>
+        get() = super.dataFlow.combine(
             DatabaseProvider.favoriteDao.getAllFavoriteId(),
             ::combineGiphyWithFavorites
         )
@@ -29,18 +32,12 @@ internal class GiphyDataProvider : TimeBasedDataProvider<List<GiphyItemDTO>>() {
         return DatabaseProvider.giphyDao.getAll().map(Giphy::asGiphyItemDTO)
     }
 
-    override suspend fun loadLocalFlow(): Flow<List<GiphyItemDTO>> {
-        return DatabaseProvider.giphyDao.getAllFlow().map { it.map(Giphy::asGiphyItemDTO) }
-    }
-
-    override suspend fun saveLocal(version: VersionData, data: List<GiphyItemDTO>) {
-        super.saveLocal(version, data)
+    override suspend fun saveLocal(data: List<GiphyItemDTO>) {
         DatabaseProvider.giphyDao.dump()
         DatabaseProvider.giphyDao.insertAll(data.map(GiphyItemDTO::asGiphy))
     }
 
-    override suspend fun dumpLocal(version: VersionData) {
-        super.dumpLocal(version)
+    override suspend fun dumpLocal() {
         DatabaseProvider.giphyDao.dump()
     }
 
