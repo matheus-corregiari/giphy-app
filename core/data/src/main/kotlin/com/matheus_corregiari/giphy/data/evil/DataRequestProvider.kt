@@ -13,16 +13,14 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-internal abstract class DataRequestProvider<T>(
-    private val strategy: Strategy,
-    private val recurrence: RecurrenceStrategy
-) {
+internal abstract class DataRequestProvider<T> {
 
     abstract val versionStrategy: VersionStrategy
+    abstract val strategy: Strategy
+    abstract val recurrence: RecurrenceStrategy
 
     abstract suspend fun loadRemote(): T
     abstract suspend fun loadLocal(): T
-
     abstract suspend fun saveLocal(data: T)
     abstract suspend fun dumpLocal()
 
